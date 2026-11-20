@@ -9,24 +9,50 @@ st.write("FFprobe:", ffprobe_path)
 
 import os
 import re
+import shutil
 import subprocess
 import textwrap
+import platform
 from pathlib import Path
 
 import streamlit as st
 
 APP_DIR = Path(__file__).resolve().parent
+
 DOWNLOAD_DIR = APP_DIR / "downloads"
 OUTPUT_DIR = APP_DIR / "output"
 TEMP_DIR = APP_DIR / "temp"
+
 for folder in (DOWNLOAD_DIR, OUTPUT_DIR, TEMP_DIR):
     folder.mkdir(exist_ok=True)
 
-st.set_page_config(page_title="ViralClips AI", page_icon="🎬", layout="wide")
+st.set_page_config(
+    page_title="ViralClips AI",
+    page_icon="🎬",
+    layout="wide"
+)
+
 st.title("🎬 ViralClips AI")
-st.caption("Local YouTube-to-Shorts generator • Whisper transcription • FFmpeg rendering")
+st.caption("YouTube-to-Shorts generator • Whisper transcription • FFmpeg rendering")
+
+FFMPEG_PATH = shutil.which("ffmpeg")
+FFPROBE_PATH = shutil.which("ffprobe")
+
+def find_executable(name):
+    path = shutil.which(name)
+
+    if not path:
+        raise RuntimeError(
+            f"{name} was not found on PATH. "
+            f"Platform: {platform.system()}. "
+            "Check packages.txt and Streamlit Cloud deployment logs."
+        )
+
+    return path
+
 
 KEYWORDS = {
+    # KEEP YOUR ORIGINAL KEYWORDS CONTENT HERE
     "hyped": 3.0, "crazy": 2.5, "wow": 2.2, "omg": 2.5, "no way": 3.0,
     "let's go": 2.5, "lets go": 2.5, "insane": 2.8, "unbelievable": 2.8,
     "what": 0.6, "why": 0.5, "bro": 0.7, "wait": 1.0, "never": 1.0,
