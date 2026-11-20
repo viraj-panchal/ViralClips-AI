@@ -1,11 +1,13 @@
-import shutil
 import streamlit as st
+import importlib.util
 
-ffmpeg_path = shutil.which("ffmpeg")
-ffprobe_path = shutil.which("ffprobe")
+st.write("FFmpeg:", shutil.which("ffmpeg"))
+st.write("FFprobe:", shutil.which("ffprobe"))
 
-st.write("FFmpeg:", ffmpeg_path)
-st.write("FFprobe:", ffprobe_path)
+st.write(
+    "yt-dlp:",
+    "Installed" if importlib.util.find_spec("yt_dlp") else "Missing"
+)
 
 import os
 import re
