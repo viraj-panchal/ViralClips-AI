@@ -134,10 +134,13 @@ def render_clip(video, clip, segments, index, resolution, burn_subtitles):
     width, height = (1080, 1920) if resolution == "1080 × 1920 (Full HD)" else (720, 1280)
     out = OUTPUT_DIR / f"viral_clip_{index:02}.mp4"
     srt = OUTPUT_DIR / f"viral_clip_{index:02}.srt"
-    write_srt(segments, clip["start"], clip["end"], srt)
     vf = f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"
-    if burn_subtitles and srt.stat().st_size:
-        vf += f",subtitles='{ffmpeg_filter_path(srt)}':force_style='FontName=Arial,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=90'"
+    if burn_subtitles:
+        write_srt(segments, clip["start"], clip["end"], srt)
+        if srt.exists() and srt.stat().st_size:
+            vf += f",subtitles='{ffmpeg_filter_path(srt)}':force_style='FontName=Arial,FontSize=18,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=90'"
+    elif srt.exists():
+        srt.unlink()
     args = [
         find_executable("ffmpeg"), "-y", "-ss", str(clip["start"]), "-i", str(video),
         "-t", str(clip["end"] - clip["start"]), "-vf", vf,
@@ -145,7 +148,7 @@ def render_clip(video, clip, segments, index, resolution, burn_subtitles):
         "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(out)
     ]
     run_command(args)
-    return out, srt
+    return out, (srt if burn_subtitles else None)
 
 with st.sidebar:
     st.header("Settings")
@@ -154,7 +157,11 @@ with st.sidebar:
     clip_len = st.slider("Clip duration (seconds)", 30, 60, 40, 5)
     clip_count = st.slider("Number of clips", 1, 5, 3)
     resolution = st.selectbox("Vertical output", ["720 × 1280 (recommended)", "1080 × 1920 (Full HD)"])
-    burn_subtitles = st.checkbox("Burn subtitles into video", value=True)
+    burn_subtitles = st.checkbox(
+        "Subtitles (ON/OFF)",
+        value=True,
+        help="ON: generate an SRT file and burn subtitles into each video. OFF: export clean videos with no subtitles.",
+    )
     use_cookies = st.checkbox("Use Chrome cookies (if YouTube asks you to sign in)", value=False)
 
 url = st.text_input("YouTube video URL", placeholder="https://www.youtube.com/watch?v=...")
@@ -194,11 +201,21 @@ if st.button("🚀 Generate Shorts", type="primary", disabled=not url.strip()):
         for clip, out, srt in rendered:
             st.markdown(f"**Clip score:** {clip['score']:.2f} · **Source time:** {srt_time(clip['start'])} – {srt_time(clip['end'])}")
             st.video(str(out))
-            c1, c2 = st.columns(2)
-            with c1:
-                st.download_button(f"Download MP4 — {out.name}", data=out.read_bytes(), file_name=out.name, mime="video/mp4", key=f"mp4_{out.name}")
-            with c2:
-                st.download_button(f"Download subtitles — {srt.name}", data=srt.read_bytes(), file_name=srt.name, mime="application/x-subrip", key=f"srt_{srt.name}")
+            st.download_button(
+                f"Download MP4 — {out.name}",
+                data=out.read_bytes(),
+                file_name=out.name,
+                mime="video/mp4",
+                key=f"mp4_{out.name}",
+            )
+            if srt is not None and srt.exists():
+                st.download_button(
+                    f"Download subtitles — {srt.name}",
+                    data=srt.read_bytes(),
+                    file_name=srt.name,
+                    mime="application/x-subrip",
+                    key=f"srt_{srt.name}",
+                )
     except Exception as exc:
         st.error("Processing failed.")
         st.code(str(exc))
