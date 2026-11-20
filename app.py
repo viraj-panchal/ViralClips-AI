@@ -1,3 +1,12 @@
+import shutil
+import streamlit as st
+
+ffmpeg_path = shutil.which("ffmpeg")
+ffprobe_path = shutil.which("ffprobe")
+
+st.write("FFmpeg:", ffmpeg_path)
+st.write("FFprobe:", ffprobe_path)
+
 import os
 import re
 import subprocess
