@@ -1,5 +1,5 @@
 streamlit>=1.36
-yt-dlp
+yt-dlp[default]
 ffmpeg-python
 opencv-python-headless
 faster-whisper
