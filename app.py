@@ -173,12 +173,13 @@ def run_command(args, timeout=None):
 # 6. YOUTUBE VIDEO DOWNLOADER
 # ============================================================
 
+
 def download_video(url):
 
     if not YTDLP_AVAILABLE:
         raise RuntimeError(
-            "yt-dlp is missing. Add yt-dlp to requirements.txt "
-            "and redeploy the application."
+            "yt-dlp is missing. Add yt-dlp[default] "
+            "to requirements.txt and redeploy."
         )
 
     find_executable("ffmpeg")
@@ -196,6 +197,12 @@ def download_video(url):
         "yt_dlp",
         "--no-playlist",
         "--no-warnings",
+        "--retries", "10",
+        "--fragment-retries", "10",
+        "--extractor-retries", "5",
+        "--socket-timeout", "30",
+        "--extractor-args",
+        "youtube:player_client=web_safari",
         "-f",
         "bv*[height<=1080]+ba/b[height<=1080]/b",
         "--merge-output-format",
@@ -207,7 +214,12 @@ def download_video(url):
         url
     ]
 
-    output = run_command(args)
+    try:
+        output = run_command(args)
+    except Exception as e:
+        raise RuntimeError(
+            f"YouTube download failed: {str(e)}"
+        ) from e
 
     possible_files = [
         line.strip()
@@ -231,7 +243,7 @@ def download_video(url):
         return matching_files[0]
 
     raise RuntimeError(
-        "Download finished but the video file was not found.\n"
+        "Download failed or output file was not found.\n"
         + output
     )
 
