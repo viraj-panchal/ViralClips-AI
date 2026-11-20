@@ -1,0 +1,10 @@
+
+streamlit
+yt-dlp
+ffmpeg-python
+opencv-python-headless
+faster-whisper
+scenedetect
+pandas
+numpy
+Pillow
