@@ -7,3 +7,6 @@ scenedetect
 pandas
 numpy
 Pillow
+streamlit
+yt-dlp[default]
+faster-whisper
